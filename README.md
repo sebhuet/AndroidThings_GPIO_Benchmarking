@@ -1,8 +1,18 @@
-Android Things empty project template
-=====================================
+Android Things GPIO Benchmarking
+================================
 
-Use this empty project as a template for your Android Things project.
+This project aims to benchmark gpio operation
 
+This version show the following results on a RPI3.
+
+Method A / Java
+---------------
+java manual toggling from true to false as low as 3KHZ.
+java inverting as low as 1 KHZ.
+
+Method B / Native C++
+---------------------
+...dev pendings...
 
 Pre-requisites
 --------------
