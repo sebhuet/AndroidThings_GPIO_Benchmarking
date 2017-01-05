@@ -18,7 +18,13 @@ package com.example.androidthings.myproject;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
+
+import com.google.android.things.pio.Gpio;
+import com.google.android.things.pio.PeripheralManagerService;
+
+import java.io.IOException;
 
 /**
  * Skeleton of the main Android Things activity. Implement your device's logic
@@ -42,15 +48,66 @@ import android.util.Log;
 public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private Handler mHandler = new Handler();
+    private Gpio mLedGpio;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
+
+        PeripheralManagerService service = new PeripheralManagerService();
+        try {
+            String pinName = BoardDefaults.getGPIOForOutput();
+            mLedGpio = service.openGpio(pinName);
+            mLedGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW);
+            Log.i(TAG, "Start blinking LED GPIO pin");
+            // Post a Runnable that continuously switch the state of the GPIO, blinking the
+            // corresponding LED
+            mHandler.post(mBlinkRunnable);
+        } catch (IOException e) {
+            Log.e(TAG, "Error on PeripheralIO API", e);
+        }
+
+
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestroy");
+        // Remove pending blink Runnable from the handler.
+        mHandler.removeCallbacks(mBlinkRunnable);
+        // Close the Gpio pin.
+        Log.i(TAG, "Closing LED GPIO pin");
+        try {
+            mLedGpio.close();
+        } catch (IOException e) {
+            Log.e(TAG, "Error on PeripheralIO API", e);
+        } finally {
+            mLedGpio = null;
+        }
     }
+
+    private Runnable mBlinkRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Exit Runnable if the GPIO is already closed
+            if (mLedGpio == null) {
+                return;
+            }
+            try {
+
+                while (1==1) {
+                    // Toggle the GPIO state
+                    mLedGpio.setValue(!mLedGpio.getValue());
+                    Log.d(TAG, "State set to " + mLedGpio.getValue());
+                }
+
+            } catch (IOException e) {
+                Log.e(TAG, "Error on PeripheralIO API", e);
+            }
+        }
+    };
+
 }
